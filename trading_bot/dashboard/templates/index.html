@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ca">
+<style>
+        /* PERFORMANCE BAR */
+        .perf-bar {
+            margin: 0 auto 20px auto;
+            padding: 10px;
+            max-width: 600px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            border: 1px solid #333;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .perf-item { font-weight: bold; }
+        .perf-label { color: #888; font-size: 0.8em; margin-right: 5px; text-transform: uppercase;}
+        .separator { color: #444; font-size: 1.2em; }
+
+        /* Dynamic Colors (Positive/Negative) */
+        .pos { color: #00ff88; }
+        .neg { color: #ff4444; }
+
+        /* BASE STYLES */
+        body { 
+            background-color: #121212; 
+            color: #e0e0e0; 
+            font-family: 'Courier New', monospace; 
+            padding: 20px; 
+            text-align: center; 
+            margin: 0;
+        }
+        
+        h1 { 
+            color: #00ff88; 
+            margin-bottom: 30px; 
+            font-size: clamp(1.5rem, 5vw, 2.5rem); 
+        }
+        
+        /* STATS GRID */
+        .stats-grid {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap; 
+            margin-bottom: 40px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            /* KEY: Prevents vertical stretching */
+            align-items: flex-start; 
+        }
+
+        .stat-box { 
+            background: #1e1e1e; 
+            /* KEY: Reduced padding for compactness */
+            padding: 15px 20px; 
+            border-radius: 10px; 
+            border: 1px solid #333;
+            flex: 1 1 250px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            
+            /* KEY: Height fits content exactly */
+            height: fit-content; 
+        }
+
+        .label { 
+            font-size: 0.85em; 
+            color: #888; 
+            margin-bottom: 5px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+        }
+        
+        .value { 
+            font-weight: bold; 
+            /* Clamp font size for responsiveness */
+            font-size: clamp(1.5rem, 3vw, 2.2rem); 
+            word-break: break-word; 
+            line-height: 1.1; 
+        }
+        
+        /* COLORS */
+        .val-total { color: #fff; } 
+        .val-invested { color: #00ff88; } 
+        .val-cash { color: #00ccff; }    
+
+        /* RESPONSIVE TABLE */
+        .table-container { 
+            width: 100%; 
+            overflow-x: auto; 
+            margin: 0 auto; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); 
+        }
+        
+        table { 
+            margin: 0 auto; 
+            width: 100%; 
+            max-width: 1000px;
+            border-collapse: collapse; 
+            white-space: nowrap; 
+        }
+        
+        th, td { 
+            padding: 12px 15px; 
+            text-align: center; 
+            border-bottom: 1px solid #333; 
+        }
+        th { color: #888; text-transform: uppercase; font-size: 0.8em; }
+        
+        .buy { color: #00ff88; font-weight: bold; }
+        .sell { color: #ff4444; font-weight: bold; }
+
+        /* MOBILE */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .stats-grid { gap: 10px; }
+            .stat-box { width: 100%; }
+            th, td { padding: 10px 5px; font-size: 0.85em; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🤖 DOGE TRADING BOT</h1>
+    <div class="stats-grid">
+        <div class="stat-box">
+            <div class="label">Patrimoni Total</div>
+            <div class="value val-total">{{ "%.2f"|format(account.equity) }} $</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Invertit (DOGE)</div>
+            <div class="value val-invested">{{ "%.2f"|format(account.invested) }} $</div>
+        </div>
+        <div class="stat-box">
+            <div class="label">Líquid (Cash)</div>
+            <div class="value val-cash">{{ "%.2f"|format(account.cash) }} $</div>
+        </div>
+    </div>
+    <div class="perf-bar">
+        <div class="perf-item">
+            <span class="perf-label">Diari:</span>
+            <span class="{{ 'pos' if account.daily_pct >= 0 else 'neg' }}">
+                {{ "%+.2f"|format(account.daily_pct) }}%
+            </span>
+        </div>
+
+        <div class="separator">|</div>
+
+        <div class="perf-item">
+            <span class="perf-label">Total:</span>
+            <span class="{{ 'pos' if account.total_pct >= 0 else 'neg' }}">
+                {{ "%+.2f"|format(account.total_pct) }}%
+            </span>
+        </div>
+    </div>
+    <h3>📊 Últimes Operacions</h3>
+    <div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Acció</th>
+                <th>Preu</th>
+                <th>Quantitat</th>
+                <th>Efectiu (Caixa)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trade in trades %}
+            <tr>
+                <td>{{ trade.timestamp }}</td>
+        <td class="{{ 'buy' if 'BUY' in trade.action else 'sell' if 'SELL' in trade.action else '' }}">
+            {% if 'BUY' in trade.action %} 
+            COMPRA 
+            {% elif 'SELL' in trade.action %} 
+            VENDA 
+            {% else %} 
+            {{ trade.action }} 
+            {% endif %} 
+        </td> 
+        <td>{{ trade.price }} $</td> <td>{{ trade.qty }}</td> <td>{{ trade.cash_available }} $</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <p style="text-align:center; margin-top:50px; color:#555;">Actualitzat en temps real via Alpaca API</p>
+</body>
+</html>
