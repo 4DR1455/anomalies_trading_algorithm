@@ -1,6 +1,6 @@
-# HFT-Style Animalies Trading Algorithm (C++ / OCaml / Python)
+# HFT-Style Anomalies Trading Algorithm (C++ / OCaml / Python)
 
-**A low-latency, microservices-based trading engine designed for automatically detect market price anomalies of a specific stock.**
+**A low-latency, microservices-based trading engine designed to automatically detect market price anomalies of a specific stock.**
 This project implements a hybrid architecture where execution, strategy logic, and monitoring run as decoupled processes communicating via standard Linux IPC mechanisms.
 
 ![Dashboard Screenshot](dashboard_screenshot.png)
@@ -43,7 +43,7 @@ The strategy logic operates on a discretized state space to identify mean-revers
    * **Sell Signal:** Market reality is `MinMargin` or more above prediction.
    * **Buy Signal:** Market reality is `MinMargin` or more below prediction.
 
-3. **Position Sizing (Asymptotic Allocation):** Instead of fixed lot sizes, the system dynamically calculates the optimal position size using a non-linear asymptotic formula. This allows to define the strategy, manually depending on the stock, you can define an agresive entry strategy, that reacts strong at every minimum anomalie, a sniper-style strategy that waits for a big anomalie to take advantage of it with all the budget, or a linear buying one; it all depends on the $level$ value.
+3. **Position Sizing (Asymptotic Allocation):** Instead of fixed lot sizes, the system dynamically calculates the optimal position size using a non-linear asymptotic formula. This allows the suer to define the strategy, manually depending on the stock, you can define an agressive entry strategy, that reacts strong at every minimum anomaly, a sniper-style strategy that waits for a big anomaly to take advantage of it with all the budget, or a linear buying one; it all depends on the $level$ value.
    
    The allocation formula is:
 
@@ -102,6 +102,8 @@ Prerequisites: Docker & Docker Compose.
     ```
 
 ---
-*Note: This is a live project running on Oracle Cloud Infrastructure. You can monitor its performance live [here](http://adria-trading-bot.duckdns.org/live-quant-strategy-doge). **Why doge?** I wanted a volatile stock to generate more actions to see the bot working.*
+*Note: This is a live project running on Oracle Cloud Infrastructure. You can monitor its performance live [here](http://adria-trading-bot.duckdns.org/live-quant-strategy-doge). 
+
+**Why doge?** I wanted a volatile stock to generate more actions to see the bot working.*
 
 *Disclaimer: This software is for educational purposes only. Do not risk capital you cannot afford to lose.*
