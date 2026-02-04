@@ -3,7 +3,7 @@
 **A low-latency, microservices-based trading engine designed to automatically detect market price anomalies of a specific stock.**
 This project implements a hybrid architecture where execution, strategy logic, and monitoring run as decoupled processes communicating via standard Linux IPC mechanisms.
 
-![Dashboard Screenshot](dashboard_screenshot.png)
+![Dashboard Screenshot](./MDmedia/user_dashboard.png)
 *(Fig 1: Real-time Dashboard showing automated performance analysis including Sharpe Ratio and Max Drawdown, calculated dynamically from the execution history)*
 
 ## 🏗 System Architecture
