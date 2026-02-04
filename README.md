@@ -94,6 +94,11 @@ graph LR
     style D fill:#f96,stroke:#333,stroke-width:2px,color:white
     style E fill:#f96,stroke:#333,stroke-width:2px,color:white
 ```
+## Why an EMA?
+
+To accurately detect market anomalies, the system utilizes a prediction model based on Exponential Smoothing. This approach aligns with the industry standard set by [RiskMetrics (J.P. Morgan)](https://www.msci.com/documents/10199/5915b101-4206-4ba0-aee2-3449d5c7e95a), which validates the use of exponential weighting to address the heteroscedastic nature of financial markets.
+
+Furthermore, the [NIST e-Handbook of Statistical Methods](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc431.htm) classifies this method as a "short-term memory" model. By mathematically prioritizing new data over older observations, the algorithm effectively reduces the "lag" inherent in trend-following indicators, enabling the precise detection of trend reversals and rapid price shifts.
 
 ## 🚀 Key Engineering Features
 
