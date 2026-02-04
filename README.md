@@ -4,7 +4,7 @@
 This project implements a hybrid architecture where execution, strategy logic, and monitoring run as decoupled processes communicating via standard Linux IPC mechanisms.
 
 [![Dashboard Screenshot](./MDmedia/image.png)](http://adria-trading-bot.duckdns.org/live-quant-strategy-doge)
-*(Fig 1: Real-time Dashboard showing automated performance analysis including Sharpe Ratio and Max Drawdown, calculated dynamically from the execution history)*
+*(Fig 1: Real-time Dashboard showing automated performance analysis including Sharpe Ratio and Max Drawdown. Note: Data in this screenshot is simulated to demonstrate the statistical engine's capabilities over a longer timeframe.)*
 
 ## 🏗 System Architecture
 
