@@ -1,4 +1,4 @@
-# HFT-Style Crypto Trading System (C++ / OCaml / Python)
+# HFT-Style Anomalies Trading Algorithm (C++ / OCaml / Python)
 
 **A low-latency, microservices-based trading engine designed for automated crypto strategies.**
 This project implements a hybrid architecture where execution, strategy logic, and monitoring run as decoupled processes communicating via standard Linux IPC mechanisms.
