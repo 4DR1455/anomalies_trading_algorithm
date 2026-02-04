@@ -1,6 +1,6 @@
-# HFT-Style Anomalies Trading Algorithm (C++ / OCaml / Python)
+# HFT-Style Animalies Trading Algorithm (C++ / OCaml / Python)
 
-**A low-latency, microservices-based trading engine designed for automated crypto strategies.**
+**A low-latency, microservices-based trading engine designed for automatically detect market price anomalies of a specific stock.**
 This project implements a hybrid architecture where execution, strategy logic, and monitoring run as decoupled processes communicating via standard Linux IPC mechanisms.
 
 ![Dashboard Screenshot](dashboard_screenshot.png)
@@ -17,40 +17,48 @@ graph TD
     B -->|Writes JSON| D[Shared Volume / Status File];
     D -->|Reads| E[Python Dashboard];
     E -->|HTML/JS| F[User Browser];
-    G[Parameters]-->C    
+    G[parameters.txt] -.->|Config| C    
     style B fill:#69f,stroke:#333,stroke-width:2px,color:white
     style C fill:#f96,stroke:#333,stroke-width:2px,color:white
     style F fill:#6c9,stroke:#333,stroke-width:2px,color:white
 ```
 
-### 🔧 Core Components
+## 🔧 Core Components
 
 * **Execution Engine (C++17):** Handles API connectivity (`libcurl`), order management, and safety checks. Optimized for speed and low overhead.
 * **Strategy Core (OCaml):** Pure functional logic for market analysis. Isolated from the network layer to ensure deterministic behavior.
-* **Inter-Process Communication:** Uses raw **Linux Pipes (`fork()` + `pipe()`)** instead of heavy message queues (like RabbitMQ) to keep latency strictly minimal within the container.
-* **Analytics Dashboard (Python/Flask + NumPy):**
+* **Inter-Process Communication:** Uses raw **Linux Pipes (`fork()` + `pipe()`)** to keep latency strictly minimal within the container.
+* **Analytics Dashboard (Python/Flask/Waitress + NumPy):**
     * Connects to the live data stream.
     * **Automated Statistical Analysis:** Calculates **Sharpe Ratio**, **Max Drawdown**, and **Volatility** in real-time based on the trade history.
     * Provides a responsive UI for monitoring the bot from any device.
 
+## 🧠 Decision Algorithm
 
-### Decision algorithm
+The strategy logic operates on a discretized state space to identify mean-reversion opportunities.
 
-1. **Prediction** The brain recives the new market price, the mid point between open and close of the last candle, calculates the change ratio from last market price, and finds its range, it tries to predict this same range using the past ranges with an EMA predicting model. In this case a range is a grid, like a grid trading system, thats was implemented to secure benefits.
+1. **Prediction (Signal Processing):** The brain receives the latest market data and calculates the momentum ratio relative to the previous state. It maps this continuous ratio into a discretized **"Range Grid"**. Then compares the current range against an EMA-based prediction model to filter out noise and detect price anomalies.
 
-2. **Decision** If the actual value of the market is bigger anough than the prediction (```MinMargin``` bigger) it sells, if its ```MinMargin``` smaller it buys.
+2. **Decision (Thresholding):** A trade signal is generated if the divergence between the actual market range and the predicted range exceeds the `MinMargin` parameter. 
+   * **Sell Signal:** Market reality is `MinMargin` or more above prediction.
+   * **Buy Signal:** Market reality is `MinMargin` or more below prediction.
 
-3. **Amount** To manipulate the amount of shares operating each moment it uses a formula that gives a proportion of the available shers to buy/sell each time. The formula is:
-   $$SharesAmount(x) = (1 - (1 - x^{level})^{\frac{1}{level}}) * Max$$
-where $$x$$ is the ratio $$x=CurrentRange/MaxRange$$ with
-$$0 \leq x \leq 1$$
-, $$Max$$ the maximum amount of shares beeing able to buy/sell, and $$level$$, $$MaxRange$$, and $$MinMargin$$ are custom values at ```parameters.txt```. 
+3. **Position Sizing (Asymptotic Allocation):** Instead of fixed lot sizes, the system dynamically calculates the optimal position size using a non-linear asymptotic formula. This allows to define the strategy, manually depending on the stock, you can define an agresive entry strategy, that reacts strong at every minimum anomalie, a sniper-style strategy that waits for a big anomalie to take advantage of it with all the budget, or a linear buying one; it all depends on the $level$ value.
+   
+   The allocation formula is:
 
-Understand how the `level` parameter affects the shares distribution. Click the graph below to interact with the slider:
+   $$SharesAmount(x) = Max \times \left(1 - (1 - x^{level})^{\frac{1}{level}}\right)$$
 
-[![Click to open interactive graph](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Desmos_logo.svg/300px-Desmos_logo.svg.png)](https://www.desmos.com/calculator/s4g8j9p6z2)
+   *Where:*
+   * $x$: The normalized deviation ratio ($CurrentRange / MaxRange$), with $0 \leq x \leq 1$.
+   * $Max$: Maximum amount of shares allowed at the operation.
+   * $level$: Convexity parameter (customizable in `parameters.txt`).
 
-*Click on the image to open the interactive simulation where `a = level`.*
+   **Interactive Visualization:**
+   Understand how the `level` parameter affects the capital allocation curve by interacting with the graph below:
+
+   [![Click to open interactive graph](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Desmos_logo.svg/300px-Desmos_logo.svg.png)](https://www.desmos.com/calculator/s4g8j9p6z2)
+   *(Click the image to simulate different `level` values)*
 
 ## 🚀 Key Engineering Features
 
@@ -58,5 +66,42 @@ Understand how the `level` parameter affects the shares distribution. Click the 
 2.  **Containerized Security:** Runs in a hardened Docker container with a non-root user. API keys are injected via environment variables, never stored on disk.
 3.  **Dynamic Performance Analysis:** Unlike static backtests, the system continuously evaluates its own performance metrics (P&L, Risk Ratios) using the `numpy` engine integrated into the web server.
 
+## 📂 Project Structure
+
+```bash
+.
+├── src/
+│   ├── hands_api.cc      # C++ Execution Engine (Network & Order Management)
+│   ├── brain7_2.ml       # OCaml Strategy Core (Math & Logic)
+├── dashboard/            # Python Flask Analytics Engine
+│   ├── app.py            # Analytics Backend
+│   └── templates/        # Frontend UI
+├── Dockerfile            # Multi-stage build definition (GCC + OCaml + Python)
+├── Makefile              # Build automation
+└── parameters.txt        # Runtime strategy configuration
+```
+
+## 🛠️ How to Run
+
+Prerequisites: Docker & Docker Compose.
+
+1.  **Clone the repository.**
+2.  **Set up environment variables:**
+    ```bash
+    export APCA_API_KEY_ID="your_alpaca_key"
+    export APCA_API_SECRET_KEY="your_alpaca_secret"
+    ```
+3.  **Build and Run:**
+    ```bash
+    docker build -t trading-bot .
+    docker run -d --name bot \
+      -e APCA_API_KEY_ID=$APCA_API_KEY_ID \
+      -e APCA_API_SECRET_KEY=$APCA_API_SECRET_KEY \
+      -p 80:5000 \
+      trading-bot
+    ```
+
 ---
-*Note: This is a live project running on Oracle Cloud Infrastructure. You can see its peroformance live in [this link](http://adria-trading-bot.duckdns.org/live-quant-strategy-doge).*
+*Note: This is a live project running on Oracle Cloud Infrastructure. You can monitor its performance live [here](http://adria-trading-bot.duckdns.org/live-quant-strategy-doge). **Why doge?** I wanted a volatile stock to generate more actions to see the bot working.*
+
+*Disclaimer: This software is for educational purposes only. Do not risk capital you cannot afford to lose.*
