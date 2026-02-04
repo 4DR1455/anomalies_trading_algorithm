@@ -3,8 +3,13 @@
 **A low-latency, microservices-based trading engine designed to automatically detect market price anomalies of a specific stock.**
 This project implements a hybrid architecture where execution, strategy logic, and monitoring run as decoupled processes communicating via standard Linux IPC mechanisms.
 
-[![Dashboard Screenshot](./MDmedia/image.png)](http://adria-trading-bot.duckdns.org/live-quant-strategy-doge)
-*(Fig 1: Real-time Dashboard showing automated performance analysis including Sharpe Ratio and Max Drawdown. Note: Data in this screenshot is simulated to demonstrate the statistical engine's capabilities over a longer timeframe.)*
+<div align="center">
+  <a href="http://adria-trading-bot.duckdns.org/live-quant-strategy-doge">
+    <img src="./MDmedia/image.png" alt="Dashboard Screenshot" width="100%">
+  </a>
+  <br>
+  <em>(Fig 1: Real-time Dashboard showing automated performance analysis including Sharpe Ratio and Max Drawdown. Note: Data in this screenshot is simulated to demonstrate the statistical engine's capabilities over a longer timeframe.)</em>
+</div>
 
 ## 🏗 System Architecture
 
@@ -57,8 +62,33 @@ The strategy logic operates on a discretized state space to identify mean-revers
    **Interactive Visualization:**
    Understand how the `level` parameter affects the capital allocation curve by interacting with the graph below:
 
-   [![Click to open interactive graph](./MDmedia/grafic_shares_amount.gif)](https://www.desmos.com/calculator/lsct6txxp1)
-   *(Click the image to test it yourself*
+   <div align="center"> <a href="https://www.desmos.com/calculator/lsct6txxp1"> <img src="./MDmedia/grafic_shares_amount.gif" alt="Interactive Graph" width="450"> </a><br>
+    <em>(Fig 2: A representation of the function SharesAmount.)</em></div>
+
+### Algorythm Diagram
+```mermaid
+graph LR
+    A([Wait for Market Data]) --> B[Receive Price & Calculate Range Ratio];
+    B --> C[Compute Prediction based on EMA];
+    C --> D{Anomaly Detected?};
+    
+    D -- No (Diff < MinMargin) --> A;
+    D -- Yes (Diff > MinMargin) --> E{Direction?};
+
+    E -- Overvalued --> F[SELL Signal];
+    E -- Undervalued --> G[BUY Signal];
+
+    F --> H[Calculate Size: SharesAmount];
+    G --> H;
+
+    H --> I[Execute Order via Alpaca];
+    I --> A;
+
+    style G fill:#28a745,stroke:#333,stroke-width:2px,color:white
+    style F fill:#dc3545,stroke:#333,stroke-width:2px,color:white
+    style D fill:#f96,stroke:#333,stroke-width:2px,color:white
+    style E fill:#f96,stroke:#333,stroke-width:2px,color:white
+```
 
 ## 🚀 Key Engineering Features
 
