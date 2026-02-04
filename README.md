@@ -33,6 +33,25 @@ graph TD
     * **Automated Statistical Analysis:** Calculates **Sharpe Ratio**, **Max Drawdown**, and **Volatility** in real-time based on the trade history.
     * Provides a responsive UI for monitoring the bot from any device.
 
+
+### Decision algorithm
+
+1. **Prediction** The brain recives the new market price, the mid point between open and close of the last candle, calculates the change ratio from last market price, and finds its range, it tries to predict this same range using the past ranges with an EMA predicting model. In this case a range is a grid, like a grid trading system, thats was implemented to secure benefits.
+
+2. **Decision** If the actual value of the market is bigger anough than the prediction (```MinMargin``` bigger) it sells, if its ```MinMargin``` smaller it buys.
+
+3. **Amount** To manipulate the amount of shares operating each moment it uses a formula that gives a proportion of the available shers to buy/sell each time. The formula is:
+   $$SharesAmount(x) = (1 - (1 - x^{level})^{\frac{1}{level}}) * Max$$
+where $$x$$ is the ratio $$x=CurrentRange/MaxRange$$ with
+$$0 \leq x \leq 1$$
+, $$Max$$ the maximum amount of shares beeing able to buy/sell, and $$level$$, $$MaxRange$$, and $$MinMargin$$ are custom values at ```parameters.txt```. 
+
+Understand how the `level` parameter affects the shares distribution. Click the graph below to interact with the slider:
+
+[![Click to open interactive graph](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Desmos_logo.svg/300px-Desmos_logo.svg.png)](https://www.desmos.com/calculator/s4g8j9p6z2)
+
+*Click on the image to open the interactive simulation where `a = level`.*
+
 ## 🚀 Key Engineering Features
 
 1.  **Self-Correcting Order Management:** The C++ engine handles partial fills and network timeouts autonomously without crashing the strategy logic.
@@ -40,4 +59,4 @@ graph TD
 3.  **Dynamic Performance Analysis:** Unlike static backtests, the system continuously evaluates its own performance metrics (P&L, Risk Ratios) using the `numpy` engine integrated into the web server.
 
 ---
-*Note: This is a live project running on Oracle Cloud Infrastructure.*
+*Note: This is a live project running on Oracle Cloud Infrastructure. You can see its peroformance live in [this link](http://adria-trading-bot.duckdns.org/live-quant-strategy-doge).*
