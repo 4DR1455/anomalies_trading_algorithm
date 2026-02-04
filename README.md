@@ -5,7 +5,7 @@ This project implements a hybrid architecture where execution, strategy logic, a
 
 <div align="center">
   <a href="http://adria-trading-bot.duckdns.org/live-quant-strategy-doge">
-    <img src="./MDmedia/image.png" alt="Dashboard Screenshot" width="100%">
+    <img src="./MDmedia/image.png" alt="Dashboard Screenshot" width="75%">
   </a>
   <br>
   <em>(Fig 1: Real-time Dashboard showing automated performance analysis including Sharpe Ratio and Max Drawdown. Note: Data in this screenshot is simulated to demonstrate the statistical engine's capabilities over a longer timeframe. Click to see the live dashboard.)</em>
@@ -49,16 +49,6 @@ The strategy logic operates on a discretized state space to identify mean-revers
    * **Buy Signal:** Market reality is `MinMargin` or more below prediction.
 
 3. **Position Sizing (Asymptotic Allocation):** Instead of fixed lot sizes, the system dynamically calculates the optimal position size using a non-linear asymptotic formula. This allows the suer to define the strategy, manually depending on the stock, you can define an agressive entry strategy, that reacts strong at every minimum anomaly, a sniper-style strategy that waits for a big anomaly to take advantage of it with all the budget, or a linear buying one; it all depends on the $level$ value.
-
-div align="right" style="margin-left: 15px;">
-      <a href="https://www.desmos.com/calculator/lsct6txxp1">
-        <img src="./MDmedia/grafic_shares_amount.gif" alt="Interactive Graph" width="350">
-      </a>
-      <br>
-      <div align="center">
-        <em>(Click to open interactive graphic)</em>
-      </div>
-   </div>
    
    The allocation formula is:
 
@@ -71,6 +61,14 @@ div align="right" style="margin-left: 15px;">
 
    **Interactive Visualization:**
    Understand how the `level` parameter affects the capital allocation curve by interacting with the graph below:
+
+   <div align="center" style="margin-left: 15px;">
+      <a href="https://www.desmos.com/calculator/lsct6txxp1">
+        <img src="./MDmedia/grafic.gif" alt="Interactive Graphic" width="75%">
+      </a>
+      <br>
+      <em>(Click to open interactive graphic)</em>
+   </div>
 
 ### Algorythm Diagram
 ```mermaid
