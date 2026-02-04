@@ -58,7 +58,7 @@ The strategy logic operates on a discretized state space to identify mean-revers
    Understand how the `level` parameter affects the capital allocation curve by interacting with the graph below:
 
    [![Click to open interactive graph](./MDmedia/grafic_shares_amount.gif)](https://www.desmos.com/calculator/lsct6txxp1)
-   *(Click the image to simulate different `level` values)*
+   *(Click the image to test it yourself*
 
 ## 🚀 Key Engineering Features
 
