@@ -101,10 +101,6 @@ graph LR
 2.  **Containerized Security:** Runs in a hardened Docker container with a non-root user. API keys are injected via environment variables, never stored on disk.
 3.  **Dynamic Performance Analysis:** Unlike static backtests, the system continuously evaluates its own performance metrics (P&L, Risk Ratios) using the `numpy` engine integrated into the web server.
 
-# 🚀 High-Frequency Doge Trading Bot
-
-A quantitative trading system engineered for high performance and security. It combines the raw speed of **C++** for execution, the mathematical safety of **OCaml** for strategy logic, and a secure **Python** analytics dashboard.
-
 ## 🏗️ Project Architecture
 
 The system follows a secure **microservices architecture** managed by Docker Compose:
