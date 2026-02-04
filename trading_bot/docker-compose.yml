@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # -------------------------------
+  # 1. THE BRAIN (C++ Core Bot)
+  # -------------------------------
+  # Handles trading logic, API connection, and writes the current status.
+  bot-core:
+    image: trading-bot
+    container_name: bot-core
+    restart: unless-stopped
+    volumes:
+      - ./status.json:/app/status.json:rw
+      - ./data.csv:/app/data.csv:rw
+      - ./parameters.txt:/app/parameters.txt:ro
+    environment:
+      - APCA_API_KEY_ID=${APCA_API_KEY_ID}
+      - APCA_API_SECRET_KEY=${APCA_API_SECRET_KEY}
+
+  # -------------------------------
+  # 2. THE FACE (Web Dashboard)
+  # -------------------------------
+  # Displays data to the user. Runs with restricted permissions.
+  bot-web:
+    image: bot-dashboard
+    build: ./dashboard
+    container_name: bot-web
+    restart: unless-stopped
+    ports:
+      - "80:5000"
+    # MAXIMUM SECURITY CONFIGURATION:
+    # All volumes are mounted as Read-Only (:ro).
+    # Even if the web container is compromised, it cannot modify
+    # the code, the data, or the metrics.
+    volumes:
+      - ./data.csv:/app/data.csv:ro
+      - ./status.json:/app/status.json:ro
+      - ./dashboard/metrics.json:/app/metrics.json:ro
+
+  # -------------------------------
+  # 3. THE ACCOUNTANT (Watcher Service)
+  # -------------------------------
+  # Background service that calculates persistent metrics (Max DD, HWM).
+  # It has write access to metrics.json but is not exposed to the web.
+  bot-watcher:
+    image: bot-dashboard
+    container_name: bot-watcher
+    restart: unless-stopped
+    # Runs as user 1000 (host user) to allow writing to the JSON file
+    user: "1000:1000"
+    # The '-u' flag ensures Python output is unbuffered (real-time logs)
+    command: python3 -u /app/metrics_watcher.py
+    volumes:
+      # Code is Read-Only
+      - ./metrics/metrics_watcher.py:/app/metrics_watcher.py:ro
+      - ./status.json:/app/status.json:ro
+      # Write permission needed ONLY for metrics
+      - ./dashboard/metrics.json:/app/metrics.json:rw
