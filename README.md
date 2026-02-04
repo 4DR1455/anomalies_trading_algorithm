@@ -101,40 +101,80 @@ graph LR
 2.  **Containerized Security:** Runs in a hardened Docker container with a non-root user. API keys are injected via environment variables, never stored on disk.
 3.  **Dynamic Performance Analysis:** Unlike static backtests, the system continuously evaluates its own performance metrics (P&L, Risk Ratios) using the `numpy` engine integrated into the web server.
 
+# 🚀 High-Frequency Doge Trading Bot
+
+A quantitative trading system engineered for high performance and security. It combines the raw speed of **C++** for execution, the mathematical safety of **OCaml** for strategy logic, and a secure **Python** analytics dashboard.
+
+## 🏗️ Project Architecture
+
+The system follows a secure **microservices architecture** managed by Docker Compose:
+
+1.  **Bot Core (C++ / OCaml):** * Executes trades via Alpaca API.
+    * Writes real-time status to `status.json`.
+    * *Privileges:* Read/Write on data.
+2.  **The Accountant (Python Watcher):** * Background process that calculates High Water Mark and Max Drawdown.
+    * Updates `metrics.json` only when status changes.
+    * *Privileges:* Write access to metrics.
+3.  **The Dashboard (Python Flask):** * Visualizes performance and trades.
+    * **Security:** Runs in a **Read-Only** container with a restricted user (UID 1001). It cannot modify code or data even if compromised.
+
 ## 📂 Project Structure
 
-```bash
+```text
 .
-├── src/
-│   ├── hands_api.cc      # C++ Execution Engine (Network & Order Management)
-│   ├── brain7_2.ml       # OCaml Strategy Core (Math & Logic)
-├── dashboard/            # Python Flask Analytics Engine
-│   ├── app.py            # Analytics Backend
-│   └── templates/        # Frontend UI
-├── Dockerfile            # Multi-stage build definition (GCC + OCaml + Python)
-├── Makefile              # Build automation
-└── parameters.txt        # Runtime strategy configuration
+├── hands_api.cc           # C++ Execution Engine (Network & Order Management)
+├── brain7_2.ml            # OCaml Strategy Core (Math & Logic)
+├── docker-compose.yml     # Service Orchestrator (Microservices Definition)
+├── Makefile               # Build automation
+├── parameters.txt         # Runtime strategy configuration
+│
+├── dashboard/             # SECURE VISUALIZATION LAYER (User 1001)
+│   ├── app.py             # Read-Only Flask Backend
+│   ├── Dockerfile         # Multi-stage build definition
+│   ├── templates/         # Frontend UI
+│   └── metrics.json       # Persisted metrics storage
+│
+└── metrics/               # CALCULATION LAYER (User 1000)
+    └── metrics_watcher.py # Background service for calculating Drawdown
 ```
 
 ## 🛠️ How to Run
 
-Prerequisites: Docker & Docker Compose.
+### Prerequisites
+* **Docker & Docker Compose** (Plugin v2 recommended).
+* **Alpaca Markets API Key** (Paper or Live).
 
-1.  **Clone the repository.**
-2.  **Set up environment variables:**
-    ```bash
-    export APCA_API_KEY_ID="your_alpaca_key"
-    export APCA_API_SECRET_KEY="your_alpaca_secret"
-    ```
-3.  **Build and Run:**
-    ```bash
-    docker build -t trading-bot .
-    docker run -d --name bot \
-      -e APCA_API_KEY_ID=$APCA_API_KEY_ID \
-      -e APCA_API_SECRET_KEY=$APCA_API_SECRET_KEY \
-      -p 80:5000 \
-      trading-bot
-    ```
+### 1. Setup Environment
+Clone the repository and export your API keys in your terminal:
+
+```bash
+export APCA_API_KEY_ID="your_alpaca_key"
+export APCA_API_SECRET_KEY="your_alpaca_secret"
+```
+
+### 2. Initialize Data Files & Permissions
+Create the necessary JSON files and set permissions. This step is **critical** for the secure microservices architecture (ensuring the Watcher can write while the Web can only read).
+
+```bash
+# Create files if they don't exist yet to prevent Docker mount errors
+touch status.json
+touch dashboard/metrics.json
+
+# Allow read/write access for the Docker users (UID 1000 & 1001)
+# This enables the secure 'bot-watcher' to update metrics.
+chmod 664 dashboard/metrics.json
+```
+
+### 3. Build & Run
+Deploy the entire stack (Core, Web, and Watcher) with a single command. Docker Compose will handle the build and network creation automatically.
+
+```bash
+docker compose up -d --build
+```
+
+### 4. Access the Dashboard
+Open your web browser and navigate to:
+[http://localhost:80/live-quant-strategy-doge](http://localhost:80/live-quant-strategy-doge)
 
 ---
 *Note: This is a live project running on Oracle Cloud Infrastructure. You can monitor its performance live [here](http://adria-trading-bot.duckdns.org/live-quant-strategy-doge). 
