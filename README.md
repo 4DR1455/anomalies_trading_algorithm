@@ -4,7 +4,7 @@
 This project implements a hybrid architecture where execution, strategy logic, and monitoring run as decoupled processes communicating via standard Linux IPC mechanisms.
 
 <div align="center">
-  <a href="http://adria-trading-bot.duckdns.org/live-quant-strategy-doge">
+  <a href="http://adria-trading-bot.duckdns.org/live-quant-strategy">
     <img src="./MDmedia/image.png" alt="Dashboard Screenshot" width="75%">
   </a>
   <br>
@@ -178,8 +178,6 @@ Open your web browser and navigate to:
 [http://localhost:80/live-quant-strategy-doge](http://localhost:80/live-quant-strategy-doge)
 
 ---
-*Note: This is a live project running on Oracle Cloud Infrastructure. You can monitor its performance live [here](http://adria-trading-bot.duckdns.org/live-quant-strategy-doge). 
-
-**Why doge?** I wanted a volatile stock to generate more actions to see the bot working.*
+*Note: This is a live project running on Oracle Cloud Infrastructure. You can monitor its performance live [here](http://adria-trading-bot.duckdns.org/live-quant-strategy). 
 
 *Disclaimer: This software is for educational purposes only. Do not risk capital you cannot afford to lose.*
