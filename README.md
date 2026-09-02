@@ -8,7 +8,7 @@ This project implements a hybrid architecture where execution, strategy logic, a
     <img src="./MDmedia/image.png" alt="Dashboard Screenshot" width="75%">
   </a>
   <br>
-  <em>(Fig 1: Real-time Dashboard showing automated performance analysis including Sharpe Ratio and Max Drawdown. Note: Data in this screenshot is simulated to demonstrate the statistical engine's capabilities over a longer timeframe. Click to see the live dashboard.)</em>
+  <em>(Fig 1: Real-time Dashboard showing automated performance analysis including Sharpe Ratio and Max Drawdown. Note: Data in this screenshot is simulated. Click to see live dashboard with **real** data.)</em>
 </div>
 
 ## 🏗 System Architecture
@@ -161,26 +161,115 @@ The system follows a secure **microservices architecture** managed by Docker Com
 ## 📂 Project Structure
 
 ```text
-.
-├── brain8.ml
-├── dashboard
-│   ├── app.py
-│   ├── Dockerfile
-│   ├── metrics.json
-│   └── templates
-│       └── index.html
-├── data.csv
-├── docker-compose.yml
-├── Dockerfile
-├── hands_api.cc
-├── Makefile
-├── metrics
-│   ├── equity_history.json
-│   ├── ini_w.txt
-│   ├── last_100.csv
-│   └── metrics_watcher.py
-├── params.txt
-└── status.json
+|-- MDmedia
+  |  |-- grafic.gif
+  |  |-- image.png
+  |-- readme.md
+  |-- trading_bot
+  |  |-- Dockerfile
+  |  |-- Makefile
+  |  |-- brain
+  |  |  |-- brain8.ml
+  |  |  |-- brain_refactored
+  |  |  |  |-- Comm.ml
+  |  |  |  |-- Config.ml
+  |  |  |  |-- Engine.ml
+  |  |  |  |-- Main.ml
+  |  |  |  |-- Makefile
+  |  |  |  |-- Strategy.ml
+  |  |  |  |-- Types.ml
+  |  |-- dashboard
+  |  |  |-- metrics.json
+  |  |-- data.csv
+  |  |-- docker-compose.yml
+  |  |-- get-docker.sh
+  |  |-- hands
+  |  |  |-- alpaca_bot_refactored
+  |  |  |  |-- CMakeLists.txt
+  |  |  |  |-- include
+  |  |  |  |  |-- AlpacaAPI.hpp
+  |  |  |  |  |-- BrainCommunicator.hpp
+  |  |  |  |  |-- OrderManager.hpp
+  |  |  |  |  |-- Types.hpp
+  |  |  |  |  |-- Utils.hpp
+  |  |  |  |-- src
+  |  |  |  |  |-- AlpacaAPI.cpp
+  |  |  |  |  |-- BrainCommunicator.cpp
+  |  |  |  |  |-- OrderManager.cpp
+  |  |  |  |  |-- Utils.cpp
+  |  |  |  |  |-- main.cpp
+  |  |  |-- hands_api.cc
+  |  |-- kk.txt
+  |  |-- logs.txt
+  |  |-- metrics
+  |  |  |-- equity_history.json
+  |  |  |-- ini_w.txt
+  |  |  |-- last_100.csv
+  |  |  |-- metrics_watcher.py
+  |  |-- params.json
+  |  |-- params.txt
+  |  |-- refactored_lab.tar.gz
+  |  |-- status.json
+  |  |-- v
+  |-- trading_bot_laboratory
+  |  |-- Dockerfile
+  |  |-- Makefile
+  |  |-- brain
+  |  |  |-- brain9.ml
+  |  |  |-- brain_refactored
+  |  |  |  |-- Comm.ml
+  |  |  |  |-- Config.ml
+  |  |  |  |-- Engine.ml
+  |  |  |  |-- Main.ml
+  |  |  |  |-- Makefile
+  |  |  |  |-- Strategy.ml
+  |  |  |  |-- Types.ml
+  |  |-- dashboard
+  |  |  |-- metrics.json
+  |  |-- data.csv
+  |  |-- docker-compose.yml
+  |  |-- hands
+  |  |  |-- alpaca_bot_refactored
+  |  |  |  |-- CMakeLists.txt
+  |  |  |  |-- include
+  |  |  |  |  |-- AlpacaAPI.hpp
+  |  |  |  |  |-- BrainCommunicator.hpp
+  |  |  |  |  |-- OrderManager.hpp
+  |  |  |  |  |-- Types.hpp
+  |  |  |  |  |-- Utils.hpp
+  |  |  |  |-- src
+  |  |  |  |  |-- AlpacaAPI.cpp
+  |  |  |  |  |-- BrainCommunicator.cpp
+  |  |  |  |  |-- OrderManager.cpp
+  |  |  |  |  |-- Utils.cpp
+  |  |  |  |  |-- main.cpp
+  |  |  |-- hands_api9.cc
+  |  |-- kk.txt
+  |  |-- logs.txt
+  |  |-- metrics
+  |  |  |-- equity_history.json
+  |  |  |-- ini_w.txt
+  |  |  |-- last_100.csv
+  |  |  |-- metrics_watcher.py
+  |  |-- params.json
+  |  |-- params.txt
+  |  |-- refactored_lab.tar.gz
+  |  |-- status.json
+  |  |-- v
+  |-- web
+  |  |-- Dockerfile
+  |  |-- app.py
+  |  |-- data_curr
+  |  |  |-- data.csv
+  |  |  |-- metrics.json
+  |  |  |-- status.json
+  |  |-- data_exp
+  |  |  |-- data.csv
+  |  |  |-- metrics.json
+  |  |  |-- status.json
+  |  |-- docker-compose.yml
+  |  |-- templates
+  |  |  |-- index.html
 ```
 
 ## 🛠️ How to Run
@@ -191,6 +280,10 @@ The system follows a secure **microservices architecture** managed by Docker Com
 
 ### 1. Setup Environment
 Clone the repository and export your API keys in your terminal:
+
+1. Create a file names `.env`
+
+2. Write the following text in it:
 
 ```bash
 export APCA_API_KEY_ID="your_alpaca_key"
@@ -216,9 +309,12 @@ chmod 666 data.csv status.json dashboard/metrics.json metrics/last_100.csv metri
 Deploy the entire stack (Core, Web, and Watcher) with a single command. Docker Compose will handle the build and network creation automatically.
 
 ```bash
+cd /Project_home/trading_bot/
+docker compose up -d --build
+cd ../web/
 docker compose up -d --build
 ```
 ---
-*Note: This is a live project running on Oracle Cloud Infrastructure. You can monitor its performance live [here](http://adria-trading-bot.duckdns.org/). 
+*Note: This is a live project running on Google Cloud Infrastructure. You can monitor its performance live [here](http://adria-trading-bot.duckdns.org/). 
 
 *Disclaimer: This software is for educational purposes only. Do not risk capital you cannot afford to lose.*
