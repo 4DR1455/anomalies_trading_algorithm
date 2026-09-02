@@ -1,0 +1,7 @@
+{
+  "p_margin": 0.004,
+  "max_anomaly": 0.038,
+  "k": 0.6,
+  "alpha": 0.045,
+  "min_notional": 12.0
+}

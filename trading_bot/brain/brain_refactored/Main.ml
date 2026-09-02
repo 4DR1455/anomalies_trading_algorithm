@@ -1,0 +1,1 @@
+let () = Engine.trading_loop "params.json" 0.0 1.0 0.0 45 Types.GridMap.empty 0 0.0 1.0 0.0 0

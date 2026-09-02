@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.10)
+project(AlpacaBot)
+set(CMAKE_CXX_STANDARD 17)
+find_package(CURL REQUIRED)
+include_directories(include)
+file(GLOB SOURCES "src/*.cpp")
+add_executable(alpaca_bot ${SOURCES})
+target_link_libraries(alpaca_bot ${CURL_LIBRARIES})

@@ -1,0 +1,59 @@
+services:
+  # -------------------------------
+  # 1. EL CERVELL (Bot C++)
+  # -------------------------------
+  bot-exp:
+    image: trading-bot
+    build: .
+    container_name: bot-pro
+    restart: unless-stopped
+    volumes:
+      - ./status.json:/app/status.json:rw
+      - ./data.csv:/app/data.csv:rw
+      - ./params.json:/app/params.json:ro
+    environment:
+      - APCA_API_KEY_ID=${APCA_API_KEY_ID}
+      - APCA_API_SECRET_KEY=${APCA_API_SECRET_KEY}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
+  # =================================================================
+  # 3. METRICS WATCHER (The Accountant)
+  # =================================================================
+  bot-watcher:
+    container_name: bot-watcher
+    # Reuses the dashboard image to save disk space (contains python/pandas)
+    image: web-unified-web
+    restart: unless-stopped
+    
+    # Runs as non-root user (UID 1000) for security
+    user: "1000:1000"
+    
+    # Overrides default command to run the watcher script
+    command: python3 -u /app/metrics_watcher.py
+    
+    volumes:
+      # Scripts (Read-Only)
+      - ./metrics/metrics_watcher.py:/app/metrics_watcher.py:ro
+      
+      # Input Data (Read-Only)
+      - ./status.json:/app/status.json:ro
+      - ./metrics/ini_w.txt:/app/ini_w.txt:ro
+      
+      # Output Metrics (Read-Write)
+      # These files must exist on host with write permissions (chmod 666)
+      - ./dashboard/metrics.json:/app/metrics.json:rw
+      - ./data.csv:/app/data.csv:rw
+      - ./metrics/last_100.csv:/app/last_100.csv:rw
+      - ./metrics/equity_history.json:/app/equity_history.json:rw
+
+      # Logs limit
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

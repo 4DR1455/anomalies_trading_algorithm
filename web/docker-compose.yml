@@ -1,0 +1,19 @@
+services:
+  unified-web:
+    build: .
+    container_name: bot-web-unified
+    ports:
+      - "80:5000"
+    volumes:
+      # Muntem les dades de cada bot en carpetes separades dins del contenidor
+      - ../trading_bot/dashboard/metrics.json:/app/data_curr/metrics.json:ro
+      - ../trading_bot/data.csv:/app/data_curr/data.csv:ro
+      - ../trading_bot/status.json:/app/data_curr/status.json:ro
+
+      - ../trading_bot_laboratory/dashboard/metrics.json:/app/data_exp/metrics.json:ro
+      - ../trading_bot_laboratory/status.json:/app/data_exp/status.json:ro
+      - ../trading_bot_laboratory/data.csv:/app/data_exp/data.csv:ro
+
+      # Muntem el codi de la web per si vols fer canvis sense reconstruir
+      - .:/app
+    restart: always

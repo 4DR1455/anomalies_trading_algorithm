@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Center Unified</title>
+    <style>
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Courier New', monospace; padding: 20px; text-align: center; margin: 0; }
+        
+        /* --- NAVEGACIÓ / MENU --- */
+        .nav-container { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .nav-btn { 
+            background: #1e1e1e; color: #888; border: 1px solid #333; padding: 10px 20px; 
+            cursor: pointer; border-radius: 5px; font-weight: bold; transition: 0.3s;
+        }
+        .nav-btn.active { border-color: #00ff88; color: #00ff88; background: rgba(0,255,136,0.1); }
+        .nav-btn.exp-active { border-color: #bb86fc; color: #bb86fc; background: rgba(187,134,252,0.1); }
+
+        h1 { color: #00ff88; margin-bottom: 10px; font-size: clamp(1.5rem, 5vw, 2rem); display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .experiment-tag { background: #bb86fc; color: #000; font-size: 0.4em; padding: 2px 8px; border-radius: 4px; vertical-align: middle; }
+
+        .stats-grid { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 30px; max-width: 1200px; margin-left: auto; margin-right: auto; }
+        .stat-box { background: #1e1e1e; padding: 20px; border-radius: 10px; border: 1px solid #333; flex: 1 1 250px; }
+        .label { font-size: 0.85em; color: #888; margin-bottom: 8px; text-transform: uppercase; }
+        .value { font-weight: bold; font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1.1; }
+
+        .perf-bar { margin: 0 auto 40px auto; padding: 15px; max-width: 800px; background: #1a1a1a; border-radius: 8px; border: 1px solid #444; display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; align-items: center; }
+        .perf-item { display: flex; align-items: center; gap: 5px; }
+        .perf-label { color: #888; font-size: 0.8em; text-transform: uppercase; }
+        
+        .pos { color: #00ff88; } .neg { color: #ff4444; }
+        
+        .table-container { width: 100%; overflow-x: auto; max-width: 1000px; margin: 0 auto; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; background: #1e1e1e; }
+        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #333; font-size: 0.9em; }
+        th { color: #888; text-transform: uppercase; font-size: 0.7em; }
+        .buy { color: #00ff88; font-weight: bold; } .sell { color: #ff4444; font-weight: bold; }
+
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <div class="nav-container">
+        <button class="nav-btn active" id="btn-curr" onclick="switchBot('curr')">PRODUCCIÓ</button>
+        <button class="nav-btn" id="btn-exp" onclick="switchBot('exp')">LABORATORI</button>
+    </div>
+
+    <h1 id="main-title">🤖 TRADING BOT</h1>
+
+    <div class="stats-grid">
+        <div class="stat-box"><div class="label">Patrimoni Total</div><div class="value" id="val-equity">0.00 $</div></div>
+        <div class="stat-box"><div class="label">Invertit</div><div class="value" id="val-invested" style="color:#00ff88">0.00 $</div></div>
+        <div class="stat-box"><div class="label">Líquid</div><div class="value" id="val-cash" style="color:#00ccff">0.00 $</div></div>
+    </div>
+
+    <div class="perf-bar">
+        <div class="perf-item"><span class="perf-label">ROI:</span><span id="perf-roi">0.00%</span></div>
+        <div class="perf-item"><span class="perf-label">Diari:</span><span id="perf-daily">0.00%</span></div>
+        <div class="perf-item"><span class="perf-label">Max DD:</span><span id="perf-dd">0.00%</span></div>
+        <div class="perf-item"><span class="perf-label">Sharpe:</span><span id="perf-sharpe">0.00</span></div>
+    </div>
+
+    <h3>📊 Últimes Operacions</h3>
+    <div class="table-container">
+        <table>
+            <thead><tr><th>Data</th><th>Acció</th><th>Preu</th><th>Quantitat</th></tr></thead>
+            <tbody id="trades-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        let currentBot = 'curr';
+
+        async function switchBot(botId) {
+            currentBot = botId;
+            document.getElementById('btn-curr').className = 'nav-btn' + (botId === 'curr' ? ' active' : '');
+            document.getElementById('btn-exp').className = 'nav-btn' + (botId === 'exp' ? ' exp-active' : '');
+            updateDashboard();
+        }
+
+        async function updateDashboard() {
+            try {
+                const res = await fetch(`/api/bot/${currentBot}`);
+                const data = await res.json();
+                
+                // Títol
+                const title = document.getElementById('main-title');
+                title.innerHTML = `🤖 ${data.config.name} ${currentBot === 'exp' ? '<span class="experiment-tag">EXP</span>' : ''}`;
+                title.style.color = data.config.color;
+
+                // Stats
+                document.getElementById('val-equity').innerText = data.account.equity.toFixed(2) + " $";
+                document.getElementById('val-invested').innerText = data.account.invested.toFixed(2) + " $";
+                document.getElementById('val-cash').innerText = data.account.cash.toFixed(2) + " $";
+
+                // Perf
+                const setPerf = (id, val, suffix='%', isPct=true) => {
+                    const el = document.getElementById(id);
+                    el.innerText = (val >= 0 && isPct ? "+" : "") + val.toFixed(2) + suffix;
+                    el.className = val >= 0 ? 'pos' : 'neg';
+                };
+                setPerf('perf-roi', data.account.total_return_pct);
+                setPerf('perf-daily', data.account.avg_daily_pct);
+                setPerf('perf-dd', data.account.max_dd);
+                document.getElementById('perf-sharpe').innerText = data.account.sharpe.toFixed(2);
+
+                // Trades
+                const tbody = document.getElementById('trades-body');
+                tbody.innerHTML = data.trades.map(t => `
+                    <tr>
+                        <td>${t.timestamp}</td>
+                        <td><span class="${t.action.includes('BUY') ? 'buy' : 'sell'}">${t.action}</span></td>
+                        <td>${t.price} $</td>
+                        <td>${t.qty}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="5">No hi ha operacions</td></tr>';
+
+            } catch (e) { console.error(e); }
+        }
+
+        setInterval(updateDashboard, 5000);
+        updateDashboard();
+    </script>
+</body>
+</html>
