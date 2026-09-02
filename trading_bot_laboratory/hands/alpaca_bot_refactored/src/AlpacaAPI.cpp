@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * AlpacaAPI Implementation (Laboratory Version)
+ * ============================================================================
+ * Handles REST communication with Alpaca using libcurl. This lightweight 
+ * version acts purely as a transport layer, returning raw payloads and letting 
+ * the OrderManager handle high-level exception recovery and validation.
+ * ============================================================================
+ */
+
 #include "AlpacaAPI.hpp"
 #include "Utils.hpp"
 #include <curl/curl.h>
@@ -6,6 +16,7 @@
 
 using json = nlohmann::json;
 
+// Libcurl write callback for buffering response data
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb;
@@ -14,6 +25,7 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
 AlpacaAPI::AlpacaAPI(const std::string& key, const std::string& secret) 
     : api_key(key), api_secret(secret) {}
 
+// Executes core HTTP GET, POST, and DELETE requests
 std::string AlpacaAPI::http_request(const std::string& url, const std::string& method, const std::string& body) {
     CURL* curl = curl_easy_init();
     std::string readBuffer;
@@ -41,6 +53,7 @@ std::string AlpacaAPI::http_request(const std::string& url, const std::string& m
     return readBuffer;
 }
 
+// Fetches the current mid-price for the target asset
 double AlpacaAPI::get_price() {
     std::string response = http_request(DATA_URL + "?symbols=" + SYMBOL, "GET");
     try {
@@ -52,6 +65,7 @@ double AlpacaAPI::get_price() {
     return 0.0;
 }
 
+// Fetches current account cash balance
 double AlpacaAPI::get_cash() {
     std::string response = http_request(BASE_URL + "/v2/account", "GET");
     try { 
@@ -60,6 +74,7 @@ double AlpacaAPI::get_cash() {
     } catch (...) { return -1; }
 }
 
+// Retrieves current asset holdings and availability
 Position AlpacaAPI::get_position() {
     Position pos;
     std::string response = http_request(BASE_URL + "/v2/positions/" + ASSET_SYMBOL, "GET");
@@ -81,6 +96,7 @@ Position AlpacaAPI::get_position() {
     return pos;
 }
 
+// Submits a low-level limit order directly to the broker
 std::string AlpacaAPI::send_limit_order_raw(const std::string& side, const std::string& qty_str, double price, std::string& out_error) {
     json o; o["symbol"] = SYMBOL; o["qty"] = qty_str; o["side"] = (side == "BUY" ? "buy" : "sell");
     o["type"] = "limit"; o["limit_price"] = format_price(price); o["time_in_force"] = "gtc";
@@ -96,6 +112,7 @@ std::string AlpacaAPI::send_limit_order_raw(const std::string& side, const std::
     return "";
 }
 
+// Standard wrapper for sending limit orders with pre-formatted quantities
 std::string AlpacaAPI::send_limit_order(const std::string& side, double qty, double price, std::string& out_error) {
     return send_limit_order_raw(side, format_qty(qty), price, out_error);
 }

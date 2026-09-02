@@ -1,3 +1,14 @@
+/**
+ * ============================================================================
+ * AlpacaAPI Implementation
+ * ============================================================================
+ * This module handles all REST HTTP communication with the Alpaca Broker API.
+ * It uses libcurl for synchronous network requests and nlohmann/json for 
+ * parsing market and account data. It includes auto-correction algorithms 
+ * to handle precision and balance edge-cases during order placement.
+ * ============================================================================
+ */
+
 #include "AlpacaAPI.hpp"
 #include "Utils.hpp"
 #include <curl/curl.h>
@@ -6,6 +17,7 @@
 
 using json = nlohmann::json;
 
+// Libcurl callback to append received HTTP data into a std::string buffer
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb;
@@ -14,6 +26,7 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
 AlpacaAPI::AlpacaAPI(const std::string& key, const std::string& secret) 
     : api_key(key), api_secret(secret) {}
 
+// Core HTTP request handler using libcurl
 std::string AlpacaAPI::http_request(const std::string& url, const std::string& method, const std::string& body) {
     CURL* curl = curl_easy_init();
     std::string readBuffer;
@@ -27,6 +40,7 @@ std::string AlpacaAPI::http_request(const std::string& url, const std::string& m
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L); 
+        
         if (method == "POST") { 
             curl_easy_setopt(curl, CURLOPT_POST, 1L); 
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str()); 
@@ -34,6 +48,7 @@ std::string AlpacaAPI::http_request(const std::string& url, const std::string& m
         else if (method == "DELETE") { 
             curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE"); 
         }
+        
         curl_easy_perform(curl);
         curl_easy_cleanup(curl);
         curl_slist_free_all(headers);
@@ -41,17 +56,20 @@ std::string AlpacaAPI::http_request(const std::string& url, const std::string& m
     return readBuffer;
 }
 
+// Fetches the current mid-price of the configured asset
 double AlpacaAPI::get_price() {
     std::string response = http_request(DATA_URL + "?symbols=" + SYMBOL, "GET");
     try {
         auto j = json::parse(response);
         if (j.contains("quotes") && j["quotes"].contains(SYMBOL)) {
+            // Calculate mid-price between bid and ask
             return (j["quotes"][SYMBOL]["bp"].get<double>() + j["quotes"][SYMBOL]["ap"].get<double>()) / 2.0;
         }
     } catch (...) {}
     return 0.0;
 }
 
+// Retrieves available fiat cash balance
 double AlpacaAPI::get_cash() {
     std::string response = http_request(BASE_URL + "/v2/account", "GET");
     try { 
@@ -60,6 +78,7 @@ double AlpacaAPI::get_cash() {
     } catch (...) { return -1; }
 }
 
+// Retrieves current holding position for the target asset
 Position AlpacaAPI::get_position() {
     Position pos;
     std::string response = http_request(BASE_URL + "/v2/positions/" + ASSET_SYMBOL, "GET");
@@ -81,9 +100,16 @@ Position AlpacaAPI::get_position() {
     return pos;
 }
 
+// Submits a limit order and returns the Order ID (or populates out_error on failure)
 std::string AlpacaAPI::send_limit_order_raw(const std::string& side, const std::string& qty_str, double price, std::string& out_error) {
-    json o; o["symbol"] = SYMBOL; o["qty"] = qty_str; o["side"] = (side == "BUY" ? "buy" : "sell");
-    o["type"] = "limit"; o["limit_price"] = format_price(price); o["time_in_force"] = "gtc";
+    json o; 
+    o["symbol"] = SYMBOL; 
+    o["qty"] = qty_str; 
+    o["side"] = (side == "BUY" ? "buy" : "sell");
+    o["type"] = "limit"; 
+    o["limit_price"] = format_price(price); 
+    o["time_in_force"] = "gtc";
+    
     std::string res = http_request(BASE_URL + "/v2/orders", "POST", o.dump());
     try { 
         auto j = json::parse(res); 
@@ -96,27 +122,29 @@ std::string AlpacaAPI::send_limit_order_raw(const std::string& side, const std::
     return "";
 }
 
+// Smart wrapper for placing limit orders with self-healing capabilities
 std::string AlpacaAPI::send_limit_order(const std::string& side, double& qty, double price, std::string& out_error) {
-    // 1. Intentem l'enviament normal (arrodonit a 4 decimals)
+    // 1. Attempt standard order placement (quantity rounded to 4 decimals)
     std::string id = send_limit_order_raw(side, format_qty(qty), price, out_error);
     
-    // 2. LÒGICA DE REPARACIÓ: Si falla per un problema de balanç insufficient
+    // 2. REPAIR LOGIC: If the order fails due to an "insufficient balance" edge case
     if (id.empty() && out_error.find("insufficient") != std::string::npos) {
         
-        // Reparació per a SELL (el missatge conté l'exacte balanç de SOL disponible)
+        // SELL Repair: The Alpaca error message contains the absolute exact crypto balance available.
+        // We parse this string to bypass floating-point precision mismatch issues.
         if (side == "SELL") {
             size_t pos = out_error.find("available: ");
             if (pos != std::string::npos) {
                 size_t end_pos = out_error.find(")", pos + 11);
                 if (end_pos != std::string::npos) {
                     std::string true_qty = out_error.substr(pos + 11, end_pos - (pos + 11));
-                    std::cout << "[REPAIR] Ajustant venda al balanç exacte: " << true_qty << " SOL" << std::endl;
+                    std::cout << "[REPAIR] Adjusting sell order to exact available balance: " << true_qty << " SOL" << std::endl;
                     
                     std::string retry_err;
                     id = send_limit_order_raw(side, true_qty, price, retry_err);
                     
                     if (!id.empty()) {
-                        qty = std::stod(true_qty); // Actualitzem la quantitat per a la memòria del bot
+                        qty = std::stod(true_qty); // Update internal bot memory with the true quantity
                         out_error = "";
                     } else {
                         out_error = retry_err;
@@ -124,12 +152,13 @@ std::string AlpacaAPI::send_limit_order(const std::string& side, double& qty, do
                 }
             }
         } 
-        // Reparació per a BUY (el missatge diu que falten dòlars fiat)
+        // BUY Repair: Adjusts the requested quantity based on actual fiat cash available
         else if (side == "BUY") {
             double safe_cash = get_cash();
-            if (safe_cash > 1.0) { // Si hi ha saldo per comprar
-                double new_qty = (safe_cash * 0.99) / price; // Marge del 1% per cobrir possibles fees
-                std::cout << "[REPAIR] Ajustant compra al capital fiat disponible: " << new_qty << " SOL" << std::endl;
+            if (safe_cash > 1.0) { // Check if there is meaningful balance to buy
+                // Reserve a 1% margin to safely cover potential broker fees and price fluctuations
+                double new_qty = (safe_cash * 0.99) / price; 
+                std::cout << "[REPAIR] Adjusting buy order to available fiat capital: " << new_qty << " SOL" << std::endl;
                 
                 std::string retry_err;
                 id = send_limit_order_raw(side, format_qty(new_qty), price, retry_err);

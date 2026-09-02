@@ -1,3 +1,39 @@
+(**
+ * ============================================================================
+ * Strategy Brain Core (OCaml) - Dual-Directional Mean Reversion 
+ * (Peaks & Valleys Engine) - Experimental Laboratory Branch
+ * ============================================================================
+ * This module implements the deterministic core logic for market execution.
+ * It expands upon the baseline mean-reversion model by capturing both 
+ * undervalued (Valley/Vall at the dashboard) and overvalued (Peak/Pic at the 
+ * dashboard) price anomalies.
+ * 
+ * ALPHA: Small market anomalies regardless of their vertical direction.
+ * 
+ * Current R&D Evaluation (Capital Allocation Dilemma):
+ * This laboratory branch is actively testing which strategy is more profitable:
+ *   A) Target BOTH anomaly types simultaneously allocating 50% of the budget 
+ *      to each direction. (Laboratory bot, this version)
+ *   B) Target a SINGLE anomaly direction at 100% capital efficiency. (Production 
+ *      bot, the main varsion)
+ * 
+ * Additionally, this laboratory evaluates a system designed to protect capital from
+ * bear markets. (see Key Architectural Feature 2).
+ * 
+ * Key Architectural Features:
+ * 1. Dual Anomaly Capture: Actively trades on both sides of the EMA prediction 
+ *    using dynamic asymptotic position sizing (SharesAmount).
+ * 2. Bear Market Defense (Mode 0 / 1): Incorporates a strict freeze-zone 
+ *    protocol. The engine suspends active trading (FREEZE) during persistent 
+ *    downward momentum to prevent heavy drawdowns, resuming (UNFREEZE) only 
+ *    when momentum definitively recovers.
+ * 3. Forced Capital Deployment: Triggers a minimal liquidity injection if no 
+ *    structural anomalies are detected within a 60-cycle horizon.
+ * 4. State Rollback: Maintains state integrity via backup variables during 
+ *    API timeouts or failed execution chases.
+ * ============================================================================
+ *)
+
 open Types
 
 let rec trading_loop config_file prev_price momentum ema_ratio cooldown inventory cycles_horiz b_p b_m b_e b_cy mode =

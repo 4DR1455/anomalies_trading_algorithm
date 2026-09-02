@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * Trading Execution Engine - Main Loop (Laboratory Version)
+ * ============================================================================
+ * Coordinates the dual-direction "Peaks and Valleys" (Pics i Valls) strategy.
+ * Listens for commands from the OCaml Brain via IPC pipes and dispatches 
+ * complex chase actions (buying dips or shorting peaks) via the OrderManager.
+ * ============================================================================
+ */
+
 #include <iostream>
 #include <string>
 #include <thread>
@@ -22,9 +32,10 @@ int main() {
     brain.start();
 
 ini:
-    std::cout << "[INIT] Unificant i inicialitzant..." << std::endl;
-    api.delete_all_orders(); 
+    std::cout << "[INIT] Unifying and initializing environment..." << std::endl;
+    api.delete_all_orders(); // Clear slate on startup
     
+    // Ensure broker has flushed all pending open orders
     for (int i = 0; i < 15; i++) {
         std::string check_res = api.get_open_orders();
         if (check_res == "[]" || check_res.empty()) break;
@@ -45,6 +56,9 @@ ini:
         goto ini;
     }
 
+    // ==========================================
+    // MAIN EXECUTION TICK LOOP
+    // ==========================================
     while (true) {
         double price = api.get_price();
         double cash = api.get_cash();
@@ -53,8 +67,9 @@ ini:
         if (price > 0 && cash > -1) {
             update_status_file(cash, pos.qty, price);
 
-            std::cout << "[" << get_timestamp() << "] 🟢 ACTIU -> Preu: " << price << " $ | Caixa: " << cash << " $ | SOL: " << pos.qty << std::endl;
+            std::cout << "[" << get_timestamp() << "] 🟢 ACTIVE -> Price: " << price << " $ | Cash: " << cash << " $ | SOL: " << pos.qty << std::endl;
 
+            // Review active background queues for both sides of the grid
             manager.review_sell_orders(cash, pos.qty);
             manager.review_buy_orders(cash, pos.qty);
 
@@ -69,6 +84,7 @@ ini:
                 std::string type; 
                 
                 if (ss >> type) {
+                    // HANDLE SYSTEM COMMANDS (FREEZE / UNFREEZE)
                     if (type == "CMD") {
                         std::string cmd;
                         if (ss >> cmd) {
@@ -102,7 +118,9 @@ ini:
                                 }
                             }
                         }
-                    } else if (type == "VALL") {
+                    } 
+                    // HANDLE VALLEY (VALL) PROTOCOL: Buy dips, target higher exit
+                    else if (type == "VALL") {
                         double q, entry_r, exit_r;
                         if (ss >> q >> entry_r >> exit_r) {
                             double entry_p = (entry_r < 2.0) ? f_price_init * entry_r : entry_r;
@@ -121,6 +139,7 @@ ini:
                                 std::string err_msg;
                                 std::string s_id = api.send_limit_order("SELL", qty_to_sell, exit_p, err_msg);
                                 
+                                // Self-healing fallback for insufficient position balances during sell placement
                                 if (s_id.empty() && err_msg.find("insufficient") != std::string::npos) {
                                     size_t s_pos = err_msg.find("available: ");
                                     if (s_pos != std::string::npos) {
@@ -138,7 +157,9 @@ ini:
                                 else manager.push_sell_order(s_id, qty_to_sell, exit_p, 0.0);
                             }
                         }
-                    } else if (type == "PIC") {
+                    } 
+                    // HANDLE PEAK (PIC) PROTOCOL: Sell peaks, target lower buyback
+                    else if (type == "PIC") {
                         double q, entry_r, exit_r;
                         if (ss >> q >> entry_r >> exit_r) {
                             double entry_p = (entry_r < 2.0) ? f_price_init * entry_r : entry_r;
@@ -157,6 +178,7 @@ ini:
                                 std::string err_msg;
                                 std::string b_id = api.send_limit_order("BUY", qty_to_buy, exit_p, err_msg);
                                 
+                                // Self-healing fallback for insufficient cash balances during buyback placement
                                 if (b_id.empty() && err_msg.find("insufficient") != std::string::npos) {
                                     double safe_cash = api.get_cash();
                                     if (safe_cash > 1.0) {

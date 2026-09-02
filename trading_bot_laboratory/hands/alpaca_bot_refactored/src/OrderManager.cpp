@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * OrderManager Implementation (Laboratory Version)
+ * ============================================================================
+ * Manages active queues for both buy and sell limit orders. Includes logic 
+ * for handling partial fills, order expiration recovery, wash trade conflict 
+ * resolution, and execution chasing for the Peaks and Valleys strategy.
+ * ============================================================================
+ */
+
 #include "OrderManager.hpp"
 #include "Utils.hpp"
 #include <iostream>
@@ -22,6 +32,7 @@ void OrderManager::push_buy_order(const std::string& id, double qty, double pric
     buy_orders_queue.push_back({id, qty, price, grid_id});
 }
 
+// Background review loop for pending sell orders
 void OrderManager::review_sell_orders(double cash, double shares) {
     std::string open_orders_res = api.get_open_orders();
     std::vector<std::string> open_order_ids;
@@ -36,6 +47,7 @@ void OrderManager::review_sell_orders(double cash, double shares) {
 
     auto it = sell_orders_queue.begin();
     while (it != sell_orders_queue.end()) {
+        // If order lacks an ID, attempt placement or handle balance mismatch
         if (it->id.empty()) {
             std::string err_msg;
             std::string new_id = api.send_limit_order("SELL", it->qty, it->price, err_msg);
@@ -52,6 +64,7 @@ void OrderManager::review_sell_orders(double cash, double shares) {
                     }
                 }
             }
+            // Resolve wash trade restrictions by slightly shifting price target
             if (new_id.empty() && err_msg.find("wash trade") != std::string::npos) {
                 it->price += 0.01; 
                 ++it; continue;
@@ -60,6 +73,7 @@ void OrderManager::review_sell_orders(double cash, double shares) {
             ++it; continue; 
         }
 
+        // Skip if order is still actively open at the broker
         if (std::find(open_order_ids.begin(), open_order_ids.end(), it->id) != open_order_ids.end()) { ++it; continue; }
 
         std::string res = api.get_order_status(it->id);
@@ -74,7 +88,7 @@ void OrderManager::review_sell_orders(double cash, double shares) {
         } catch (...) {}
 
         if (status == "filled") {
-            std::cout << "[VALL SORTIDA] ✅ Tancament executat: Venuts " << it->qty << " SOL a " << filled_p << " $" << std::endl;
+            std::cout << "[VALL SORTIDA] ✅ Execution completed: Sold " << it->qty << " SOL @ " << filled_p << " $" << std::endl;
             log_to_csv("VALL_OUT (Sell)", filled_p, it->qty, cash + (it->qty * filled_p), shares - it->qty);
             std::string msg = "SOLD " + std::to_string(it->grid_id) + "\n";
             brain.send_message(msg);
@@ -82,7 +96,7 @@ void OrderManager::review_sell_orders(double cash, double shares) {
         } else if (status == "canceled" || status == "expired" || is_dead) {
             double remaining_qty = it->qty - filled_q;
             if (filled_q > 0.0 && !is_dead) {
-                std::cout << "[VALL SORTIDA] ⚠️ Tancament parcial: " << filled_q << " SOL a " << filled_p << " $" << std::endl;
+                std::cout << "[VALL SORTIDA] ⚠️ Partial execution: " << filled_q << " SOL @ " << filled_p << " $" << std::endl;
                 log_to_csv("VALL_OUT (Partial)", filled_p, filled_q, cash + (filled_q * filled_p), shares - filled_q);
                 std::string msg = "SOLD " + std::to_string(it->grid_id) + "\n";
                 brain.send_message(msg);
@@ -96,6 +110,7 @@ void OrderManager::review_sell_orders(double cash, double shares) {
     }
 }
 
+// Background review loop for pending buy orders
 void OrderManager::review_buy_orders(double cash, double shares) {
     std::string open_orders_res = api.get_open_orders();
     std::vector<std::string> open_order_ids;
@@ -146,7 +161,7 @@ void OrderManager::review_buy_orders(double cash, double shares) {
         } catch (...) {}
 
         if (status == "filled") {
-            std::cout << "[PIC RECOMPRA] ✅ Ordre executada: Comprats " << it->qty << " SOL a " << filled_p << " $" << std::endl;
+            std::cout << "[PIC RECOMPRA] ✅ Order executed: Bought " << it->qty << " SOL @ " << filled_p << " $" << std::endl;
             log_to_csv("PIC_OUT (Buy)", filled_p, it->qty, cash - (it->qty * filled_p), shares + it->qty);
             std::string msg = "BOUGHT " + std::to_string(it->grid_id) + "\n";
             brain.send_message(msg);
@@ -154,7 +169,7 @@ void OrderManager::review_buy_orders(double cash, double shares) {
         } else if (status == "canceled" || status == "expired" || is_dead) {
             double remaining_qty = it->qty - filled_q;
             if (filled_q > 0.0 && !is_dead) {
-                std::cout << "[PIC RECOMPRA] ⚠️ Compra parcial: " << filled_q << " SOL a " << filled_p << " $" << std::endl;
+                std::cout << "[PIC RECOMPRA] ⚠️ Partial buy: " << filled_q << " SOL @ " << filled_p << " $" << std::endl;
                 log_to_csv("PIC_OUT (Partial)", filled_p, filled_q, cash - (filled_q * filled_p), shares + filled_q);
                 std::string msg = "BOUGHT " + std::to_string(it->grid_id) + "\n";
                 brain.send_message(msg);
@@ -168,6 +183,7 @@ void OrderManager::review_buy_orders(double cash, double shares) {
     }
 }
 
+// Executes chasing logic for valley accumulation entries
 std::pair<double, double> OrderManager::execute_maker_buy_chase(double qty, double price) {
     std::string err;
     std::string order_id = api.send_limit_order("BUY", qty, price, err);
@@ -208,11 +224,12 @@ std::pair<double, double> OrderManager::execute_maker_buy_chase(double qty, doub
     } catch (...) {}
 
     if (filled_q > 0.0) {
-        std::cout << "[VALL ENTRADA] 🛒 Inversió confirmada: " << filled_q << " SOL a " << filled_p << " $" << std::endl;
+        std::cout << "[VALL ENTRADA] 🛒 Investment confirmed: " << filled_q << " SOL @ " << filled_p << " $" << std::endl;
     }
     return {filled_q, filled_p};
 }
 
+// Executes chasing logic for peak short/exit entries
 std::pair<double, double> OrderManager::execute_maker_sell_chase(double qty, double price) {
     std::string err;
     std::string order_id = api.send_limit_order("SELL", qty, price, err);
@@ -257,7 +274,7 @@ std::pair<double, double> OrderManager::execute_maker_sell_chase(double qty, dou
     } catch (...) {}
 
     if (filled_q > 0.0) {
-        std::cout << "[PIC ENTRADA] 📉 Sortida confirmada: " << filled_q << " SOL a " << filled_p << " $" << std::endl;
+        std::cout << "[PIC ENTRADA] 📉 Exit confirmed: " << filled_q << " SOL @ " << filled_p << " $" << std::endl;
     }
     return {filled_q, filled_p};
 }
