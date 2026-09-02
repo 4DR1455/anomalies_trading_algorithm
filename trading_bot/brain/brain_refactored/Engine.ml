@@ -1,3 +1,30 @@
+(**
+ * ============================================================================
+ * Strategy Brain Core (OCaml) - Single-Directional Mean Reversion Engine
+ * ============================================================================
+ * This module implements the deterministic core logic for the production 
+ * trading execution. Unlike the dual-directional laboratory branch, this 
+ * engine is optimized for 100% capital efficiency by strictly targeting 
+ * undervalued market anomalies (Valleys).
+ * 
+ * ALPHA: Small downwards maket anomalies/deviations.
+ * 
+ * Key Architectural Features:
+ * 1. Asymmetric Capital Deployment: Maximizes ROI using downward market 
+ *    anomalies by buying on price deviations and selling on price recovery.
+ * 2. Grid-Based Position Tracking: Utilizes a virtual grid mapping system 
+ *    (GridMap) to prevent over-exposure and redundant purchases within the 
+ *    same price zone.
+ * 3. Dynamic Position Sizing: Calculates optimal order quantities using 
+ *    an asymptotic formula (SharesAmount) based on anomaly severity.
+ * 4. Forced Liquidity Injection: Automatically executes a minor market 
+ *    entry if no structural anomalies occur within a 60-cycle horizon, 
+ *    ensuring continuous market participation.
+ * 5. State Rollback: Preserves state integrity using backup variables 
+ *    to seamlessly recover from API timeouts or missed chase executions.
+ * ============================================================================
+ *)
+
 open Types
 
 let rec trading_loop config_file prev_price momentum ema_ratio cooldown inventory cycles_horiz b_p b_m b_e b_cy =
