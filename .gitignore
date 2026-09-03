@@ -1,0 +1,29 @@
+# Ignorar tots els arxius i carpetes ocultes per defecte
+.*
+!.gitignore
+
+# Ignorar arxius de variables d'entorn
+.env
+*.env
+
+# Ignorar brossa de Python
+__pycache__/
+*.pyc
+
+# Ignorar arxius de log
+*.log
+
+# Ignorar get-docker.sh
+get-docker.sh
+
+#Ignorar docs vells orientatius
+hands_api.cc
+hands_api9.cc
+brain8.ml
+brain9.ml
+
+# Ignorar dades del bot i mètriques
+*.csv
+status.json
+metrics.json
+equity_history.json

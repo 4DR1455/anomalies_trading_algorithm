@@ -8,7 +8,7 @@ This project implements a hybrid architecture where execution, strategy logic, a
     <img src="./MDmedia/image.png" alt="Dashboard Screenshot" width="75%">
   </a>
   <br>
-  <em>(Fig 1: Real-time Dashboard showing automated performance analysis including Sharpe Ratio and Max Drawdown. Note: Data in this screenshot is simulated. Click to see live dashboard with **real** data.)</em>
+  <em>(Fig 1: Real-time Dashboard showing automated performance analysis including Sharpe Ratio and Max Drawdown. Note: Data in this screenshot is simulated. Click to see live dashboard with <b>real</b> data. Please understand dashboard had changed, having now more features.)</em>
 </div>
 
 ## 🏗 System Architecture
@@ -157,6 +157,7 @@ The system follows a secure **microservices architecture** managed by Docker Com
     * *Privileges:* Write access to metrics.
 3.  **The Dashboard (Python Flask):** * Visualizes performance and trades.
     * **Security:** Runs in a **Read-Only** container with a restricted user (UID 1001). It cannot modify code or data even if compromised.
+4.  **The laboratory:** Another bot like *Bot Core* where new ideas can be tried out. See trading bot laboratory's Engine.ml header to know more. Also see trading bot's Engine.ml header to understand better.
 
 ## 📂 Project Structure
 
