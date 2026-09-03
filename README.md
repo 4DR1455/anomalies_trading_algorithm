@@ -157,7 +157,7 @@ The system follows a secure **microservices architecture** managed by Docker Com
     * *Privileges:* Write access to metrics.
 3.  **The Dashboard (Python Flask):** * Visualizes performance and trades.
     * **Security:** Runs in a **Read-Only** container with a restricted user (UID 1001). It cannot modify code or data even if compromised.
-4.  **The laboratory:** Another bot like *Bot Core* where new ideas can be tried out. See trading bot laboratory's Engine.ml header to know more. Also see trading bot's Engine.ml header to understand better.
+4.  **The laboratory:** Another bot like *Bot Core* where new ideas can be tried out. See trading bot laboratory's Engine.ml header to know more. See also trading bot's Engine.ml header to understand better.
 
 ## 📂 Project Structure
 
