@@ -1,6 +1,6 @@
 services:
   # -------------------------------
-  # 1. EL CERVELL (Bot C++)
+  # 1. THE BRAIN (Bot C++)
   # -------------------------------
   bot-pro:
     image: trading-bot
