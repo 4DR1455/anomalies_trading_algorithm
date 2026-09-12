@@ -318,6 +318,6 @@ docker compose up -d --build
 ---
 * Note: This is a live project running on Google Cloud Infrastructure. You can monitor its performance live [here](http://adria-trading-bot.duckdns.org/). 
 
-*Disclaimer: This software is for educational purposes only. Do not risk capital you cannot afford to lose.*
+* Note: There is a known bug affecting lab data reporting: occasionally, the dashboard displays large, non-existent crashes. If in doubt, ask me for the Alpaca data or verify consistency with the production dashboard.
 
-***Note:*** There is a known bug affecting lab data reporting: occasionally, the dashboard displays large, non-existent crashes. If in doubt, ask me for the Alpaca data or verify consistency with the production dashboard.
+*Disclaimer: This software is for educational purposes only. Do not risk capital you cannot afford to lose.*
