@@ -320,6 +320,6 @@ docker compose up -d --build
 
 * Note: There is a known bug affecting lab data reporting: occasionally, the dashboard displays large, non-existent crashes. If in doubt, ask me for the Alpaca data or verify consistency with the production dashboard.
 
-* Note: Recently I've reached very high amounts of money (~190.000$), that lead an unexpected error to appear, apperently, alpaca broker does not let me do very very big operations, so I mighht get money stuck until I fix this problem
+* Note: Recently I've reached very high amounts of money (~190.000$), that lead an unexpected error to appear, apperently, alpaca broker does not let me do very very big operations, so I mighht get money stuck until I fix this problem, also dashboard may not be coordinated with orders due to manually selling in order to unstack money.
 
 *Disclaimer: This software is for educational purposes only. Do not risk capital you cannot afford to lose.*
