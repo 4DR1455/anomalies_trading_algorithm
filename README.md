@@ -3,7 +3,7 @@
 > [!CAUTION]
 > ⚠️ **OUTDATED REPOSITORY** ⚠️
 > 
-> This bot is not working anymore. The part 2 is available at **[anomalies_trading_algorithm_II](https://github.com/4DR1455/anomalies_trading_algorithm_II)**.
+> This bot is not working anymore. The part 2 is available at **[anomalies_trading_algorithm_II](https://github.com/4DR1455/anomalies_trading_algorithm_II/blob/main/README.md)**.
 
 --------
 
